@@ -11,7 +11,7 @@ export async function GET() {
   const result: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     env: {
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? "✅ set" : "❌ missing",
+      NEXT_PUBLIC_SUPABASE_DATABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL ? "✅ set" : "❌ missing",
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "✅ set" : "❌ missing",
       SESSION_SECRET: process.env.SESSION_SECRET ? "✅ set" : "❌ missing (using default)",
     },
