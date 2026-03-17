@@ -1,6 +1,6 @@
 # StockPulse — Military Inventory Management System
 
-Система управління логістикою військових складів, побудована на **Next.js 16** (App Router) з підтримкою деплою на **Netlify**.
+Система управління логістикою військових складів, побудована на **Next.js 16** (App Router) з **Supabase** (PostgreSQL) та підтримкою деплою на **Netlify**.
 
 ## Стек технологій
 
@@ -9,13 +9,42 @@
 - **State Management**: TanStack Query v5
 - **Forms**: React Hook Form + Zod validation
 - **Auth**: iron-session (cookie-based sessions)
-- **Storage**: In-Memory (прототип; скидається при перезапуску/cold start)
+- **Database**: Supabase (PostgreSQL) via @supabase/supabase-js
 - **Deployment**: Netlify з @netlify/plugin-nextjs
+
+## Налаштування Supabase
+
+### 1. Створити проєкт на Supabase
+
+1. Зайти на [supabase.com](https://supabase.com) → New Project
+2. Обрати назву, пароль, регіон (EU Central рекомендовано)
+3. Почекати поки проєкт створиться
+
+### 2. Створити таблиці
+
+Відкрити **SQL Editor** у Supabase Dashboard та виконати:
+
+1. Спочатку `supabase/schema.sql` — створює таблиці `products` та `users`
+2. Потім `supabase/seed.sql` — заповнює початковими даними (admin + 10 продуктів)
+
+### 3. Отримати ключі
+
+У **Supabase Dashboard → Settings → API** скопіювати:
+
+- **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+- **service_role key** (secret!) → `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Запуск локально
 
 ```bash
+# 1. Встановити залежності
 npm install
+
+# 2. Скопіювати та заповнити env файл
+cp .env.local.example .env.local
+# Відредагувати .env.local — вставити Supabase URL та ключі
+
+# 3. Запустити dev сервер
 npm run dev
 ```
 
@@ -24,6 +53,14 @@ npm run dev
 **Дані для входу:**
 - Логін: `admin`
 - Пароль: `admin123`
+
+## Environment Variables
+
+| Змінна | Де взяти | Опис |
+|--------|----------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API → Project URL | URL проєкту Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → service_role key | Секретний ключ (НЕ anon key!) |
+| `SESSION_SECRET` | Згенерувати самостійно (32+ символів) | Ключ шифрування cookies |
 
 ## Збірка
 
@@ -35,8 +72,11 @@ npm run build
 
 1. Завантажити репозиторій на GitHub
 2. Підключити репозиторій до Netlify
-3. Netlify автоматично підхопить `netlify.toml` та зберe проєкт
-4. Встановити `SESSION_SECRET` у Environment Variables Netlify
+3. **У Netlify Dashboard → Site → Environment variables** додати:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SESSION_SECRET`
+4. Netlify автоматично підхопить `netlify.toml` та збере проєкт
 
 Або через Netlify CLI:
 ```bash
@@ -77,12 +117,18 @@ src/
     ├── auth.ts               # iron-session auth helpers
     ├── queryClient.ts        # TanStack Query config
     ├── schema.ts             # Types, Zod schemas, constants
-    ├── storage.ts            # In-Memory storage (singleton)
+    ├── storage.ts            # Supabase storage layer
+    ├── supabase.ts           # Supabase client
     └── utils.ts              # cn() helper
+
+supabase/
+├── schema.sql                # SQL схема таблиць
+└── seed.sql                  # Початкові дані (admin + products)
 ```
 
 ## Особливості
 
+- **Supabase PostgreSQL**: дані зберігаються надійно, не скидаються при перезапуску
 - **Військовий профіль**: 21 звання ЗСУ, 5 рівнів допуску, позивний, підрозділ
 - **Ролі**: admin (повний доступ) та user (тільки продукти)
 - **Dashboard**: статистика, алерти low stock / out of stock
@@ -90,20 +136,4 @@ src/
 - **Users**: створення/редагування/видалення (тільки admin)
 - **Dark mode**: підтримка темної теми
 - **Cookie-based auth**: iron-session (серверна сесія)
-
-## Відмінності від Express-версії
-
-| Express + Vite (попередня)     | Next.js (поточна)              |
-|-------------------------------|-------------------------------|
-| Express routes                | Next.js Route Handlers        |
-| passport + express-session    | iron-session                  |
-| wouter (hash routing)         | Client-side state routing     |
-| Vite dev server               | Next.js Turbopack             |
-| `__PORT_5000__` proxy         | Same-origin API calls         |
-| Manual build script           | `next build`                  |
-
-## Обмеження прототипу
-
-- In-Memory storage скидається при кожному перезапуску сервера
-- На Netlify serverless — storage скидається при cold start
-- Для production потрібна база даних (PostgreSQL з Drizzle ORM)
+- **Netlify-ready**: повна сумісність з Netlify serverless

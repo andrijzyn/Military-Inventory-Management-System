@@ -1,117 +1,184 @@
-import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import { getSupabase } from "./supabase";
 import type { Product, InsertProduct, User, InsertUser, SafeUser } from "./schema";
 
+// ── Helpers: map DB snake_case → app camelCase ──────────
+interface DbProduct {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  price: number;
+  low_stock_threshold: number;
+  description: string | null;
+}
+
+interface DbUser {
+  id: string;
+  username: string;
+  password: string;
+  full_name: string;
+  rank: string;
+  unit: string;
+  callsign: string | null;
+  clearance_level: string;
+  role: string;
+  is_active: boolean;
+  created_at: string | null;
+}
+
+function dbToProduct(row: DbProduct): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    sku: row.sku,
+    category: row.category,
+    quantity: row.quantity,
+    price: Number(row.price),
+    lowStockThreshold: row.low_stock_threshold,
+    description: row.description,
+  };
+}
+
+function dbToUser(row: DbUser): User {
+  return {
+    id: row.id,
+    username: row.username,
+    password: row.password,
+    fullName: row.full_name,
+    rank: row.rank,
+    unit: row.unit,
+    callsign: row.callsign,
+    clearanceLevel: row.clearance_level,
+    role: row.role,
+    isActive: row.is_active,
+    createdAt: row.created_at ? new Date(row.created_at) : null,
+  };
+}
+
 function toSafeUser(user: User): SafeUser {
-  const { password, ...safe } = user;
+  const { password: _, ...safe } = user;
   return safe;
 }
 
-class MemStorage {
-  private products: Map<string, Product>;
-  private users: Map<string, User>;
-
-  constructor() {
-    this.products = new Map();
-    this.users = new Map();
-    this.seed();
+// ── Supabase Storage ─────────────────────────────────────
+class SupabaseStorage {
+  private get db() {
+    return getSupabase();
   }
 
-  private seed() {
-    const samples: InsertProduct[] = [
-      { name: "Wireless Mouse", sku: "WM-001", category: "Electronics", quantity: 45, price: 29.99, lowStockThreshold: 10, description: "Ergonomic wireless mouse with USB receiver" },
-      { name: "Mechanical Keyboard", sku: "MK-002", category: "Electronics", quantity: 8, price: 89.99, lowStockThreshold: 10, description: "Cherry MX Blue switches, full-size" },
-      { name: "USB-C Cable 2m", sku: "UC-003", category: "Accessories", quantity: 150, price: 12.99, lowStockThreshold: 20, description: "Braided USB-C to USB-C cable" },
-      { name: "Monitor Stand", sku: "MS-004", category: "Furniture", quantity: 3, price: 49.99, lowStockThreshold: 5, description: "Adjustable aluminum monitor stand" },
-      { name: 'Laptop Sleeve 15"', sku: "LS-005", category: "Accessories", quantity: 0, price: 24.99, lowStockThreshold: 10, description: "Neoprene laptop sleeve for 15-inch laptops" },
-      { name: "Webcam HD 1080p", sku: "WC-006", category: "Electronics", quantity: 22, price: 59.99, lowStockThreshold: 10, description: "Full HD webcam with built-in microphone" },
-      { name: "Desk Lamp LED", sku: "DL-007", category: "Furniture", quantity: 5, price: 34.99, lowStockThreshold: 8, description: "Dimmable LED desk lamp with USB charging port" },
-      { name: "HDMI Cable 3m", sku: "HC-008", category: "Accessories", quantity: 80, price: 9.99, lowStockThreshold: 15, description: "High-speed HDMI 2.1 cable" },
-      { name: "Headphone Stand", sku: "HS-009", category: "Furniture", quantity: 12, price: 19.99, lowStockThreshold: 5, description: "Aluminum headphone stand" },
-      { name: "Wireless Charger", sku: "WCH-010", category: "Electronics", quantity: 0, price: 39.99, lowStockThreshold: 10, description: "15W fast wireless charger pad" },
-    ];
-
-    for (const product of samples) {
-      const id = randomUUID();
-      this.products.set(id, { ...product, id, description: product.description ?? null });
-    }
-
-    const adminId = randomUUID();
-    const adminHash = bcrypt.hashSync("admin123", 10);
-    this.users.set(adminId, {
-      id: adminId,
-      username: "admin",
-      password: adminHash,
-      fullName: "Адміністратор системи",
-      rank: "Полковник",
-      unit: "Штаб",
-      callsign: "КОРОНА",
-      clearanceLevel: "Особливої важливості",
-      role: "admin",
-      isActive: true,
-      createdAt: new Date(),
-    });
-  }
-
-  // ── Products ────────────────────────────────────
+  // ── Products ──────────────────────────────────────────
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    const { data, error } = await this.db
+      .from("products")
+      .select("*")
+      .order("name");
+    if (error) throw error;
+    return (data as DbProduct[]).map(dbToProduct);
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
-    return this.products.get(id);
+    const { data, error } = await this.db
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return undefined;
+    return dbToProduct(data as DbProduct);
   }
 
   async getProductBySku(sku: string): Promise<Product | undefined> {
-    return Array.from(this.products.values()).find((p) => p.sku === sku);
+    const { data, error } = await this.db
+      .from("products")
+      .select("*")
+      .eq("sku", sku)
+      .single();
+    if (error) return undefined;
+    return dbToProduct(data as DbProduct);
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const id = randomUUID();
-    const product: Product = { ...insertProduct, id, description: insertProduct.description ?? null };
-    this.products.set(id, product);
-    return product;
+    const { data, error } = await this.db
+      .from("products")
+      .insert({
+        name: insertProduct.name,
+        sku: insertProduct.sku,
+        category: insertProduct.category,
+        quantity: insertProduct.quantity,
+        price: insertProduct.price,
+        low_stock_threshold: insertProduct.lowStockThreshold,
+        description: insertProduct.description ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return dbToProduct(data as DbProduct);
   }
 
   async updateProduct(id: string, updates: Partial<InsertProduct>): Promise<Product | undefined> {
-    const existing = this.products.get(id);
-    if (!existing) return undefined;
-    const updated: Product = { ...existing, ...updates };
-    this.products.set(id, updated);
-    return updated;
+    // Map camelCase → snake_case
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.sku !== undefined) dbUpdates.sku = updates.sku;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
+    if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.lowStockThreshold !== undefined) dbUpdates.low_stock_threshold = updates.lowStockThreshold;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+
+    const { data, error } = await this.db
+      .from("products")
+      .update(dbUpdates)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) return undefined;
+    return dbToProduct(data as DbProduct);
   }
 
   async deleteProduct(id: string): Promise<boolean> {
-    return this.products.delete(id);
+    const { error } = await this.db
+      .from("products")
+      .delete()
+      .eq("id", id);
+    return !error;
   }
 
   async searchProducts(query: string, category?: string): Promise<Product[]> {
-    let results = Array.from(this.products.values());
+    let q = this.db.from("products").select("*");
+
     if (query) {
-      const q = query.toLowerCase();
-      results = results.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q) ||
-          (p.description && p.description.toLowerCase().includes(q))
-      );
+      const search = `%${query}%`;
+      q = q.or(`name.ilike.${search},sku.ilike.${search},description.ilike.${search}`);
     }
     if (category && category !== "all") {
-      results = results.filter((p) => p.category === category);
+      q = q.eq("category", category);
     }
-    return results;
+
+    const { data, error } = await q.order("name");
+    if (error) throw error;
+    return (data as DbProduct[]).map(dbToProduct);
   }
 
   async getCategories(): Promise<string[]> {
+    const { data, error } = await this.db
+      .from("products")
+      .select("category");
+    if (error) throw error;
     const categories = new Set<string>();
-    for (const product of this.products.values()) {
-      categories.add(product.category);
+    for (const row of data as { category: string }[]) {
+      categories.add(row.category);
     }
     return Array.from(categories).sort();
   }
 
   async getStats() {
-    const products = Array.from(this.products.values());
+    const { data, error } = await this.db
+      .from("products")
+      .select("*");
+    if (error) throw error;
+    const products = (data as DbProduct[]).map(dbToProduct);
     return {
       totalProducts: products.length,
       totalValue: products.reduce((sum, p) => sum + p.price * p.quantity, 0),
@@ -121,64 +188,87 @@ class MemStorage {
     };
   }
 
-  // ── Users ───────────────────────────────────────
+  // ── Users ─────────────────────────────────────────────
   async getUsers(): Promise<SafeUser[]> {
-    return Array.from(this.users.values()).map(toSafeUser);
+    const { data, error } = await this.db
+      .from("users")
+      .select("*")
+      .order("created_at");
+    if (error) throw error;
+    return (data as DbUser[]).map(dbToUser).map(toSafeUser);
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const { data, error } = await this.db
+      .from("users")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) return undefined;
+    return dbToUser(data as DbUser);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    );
+    const { data, error } = await this.db
+      .from("users")
+      .select("*")
+      .ilike("username", username)
+      .single();
+    if (error) return undefined;
+    return dbToUser(data as DbUser);
   }
 
   async createUser(insertUser: InsertUser): Promise<SafeUser> {
-    const id = randomUUID();
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const user: User = {
-      id,
-      username: insertUser.username,
-      password: hashedPassword,
-      fullName: insertUser.fullName,
-      rank: insertUser.rank,
-      unit: insertUser.unit,
-      callsign: insertUser.callsign ?? null,
-      clearanceLevel: insertUser.clearanceLevel ?? "Без допуску",
-      role: insertUser.role ?? "user",
-      isActive: insertUser.isActive ?? true,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
-    return toSafeUser(user);
+    const { data, error } = await this.db
+      .from("users")
+      .insert({
+        username: insertUser.username,
+        password: hashedPassword,
+        full_name: insertUser.fullName,
+        rank: insertUser.rank,
+        unit: insertUser.unit,
+        callsign: insertUser.callsign ?? null,
+        clearance_level: insertUser.clearanceLevel ?? "Без допуску",
+        role: insertUser.role ?? "user",
+        is_active: insertUser.isActive ?? true,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return toSafeUser(dbToUser(data as DbUser));
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<SafeUser | undefined> {
-    const existing = this.users.get(id);
-    if (!existing) return undefined;
-
-    const patched: User = { ...existing };
-    if (updates.username !== undefined) patched.username = updates.username;
-    if (updates.fullName !== undefined) patched.fullName = updates.fullName;
-    if (updates.rank !== undefined) patched.rank = updates.rank;
-    if (updates.unit !== undefined) patched.unit = updates.unit;
-    if (updates.callsign !== undefined) patched.callsign = updates.callsign ?? null;
-    if (updates.clearanceLevel !== undefined) patched.clearanceLevel = updates.clearanceLevel;
-    if (updates.role !== undefined) patched.role = updates.role;
-    if (updates.isActive !== undefined) patched.isActive = updates.isActive;
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.username !== undefined) dbUpdates.username = updates.username;
+    if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+    if (updates.rank !== undefined) dbUpdates.rank = updates.rank;
+    if (updates.unit !== undefined) dbUpdates.unit = updates.unit;
+    if (updates.callsign !== undefined) dbUpdates.callsign = updates.callsign ?? null;
+    if (updates.clearanceLevel !== undefined) dbUpdates.clearance_level = updates.clearanceLevel;
+    if (updates.role !== undefined) dbUpdates.role = updates.role;
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
     if (updates.password !== undefined) {
-      patched.password = await bcrypt.hash(updates.password, 10);
+      dbUpdates.password = await bcrypt.hash(updates.password, 10);
     }
 
-    this.users.set(id, patched);
-    return toSafeUser(patched);
+    const { data, error } = await this.db
+      .from("users")
+      .update(dbUpdates)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) return undefined;
+    return toSafeUser(dbToUser(data as DbUser));
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    return this.users.delete(id);
+    const { error } = await this.db
+      .from("users")
+      .delete()
+      .eq("id", id);
+    return !error;
   }
 
   async validatePassword(user: User, password: string): Promise<boolean> {
@@ -186,5 +276,4 @@ class MemStorage {
   }
 }
 
-// Singleton — Note: In serverless (Netlify), this resets on cold starts
-export const storage = new MemStorage();
+export const storage = new SupabaseStorage();
