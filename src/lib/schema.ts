@@ -26,36 +26,36 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 
 // ── Military ranks ──────────────────────────────────
 export const MILITARY_RANKS = [
-  "Солдат",
-  "Старший солдат",
-  "Молодший сержант",
-  "Сержант",
-  "Старший сержант",
-  "Головний сержант",
-  "Штаб-сержант",
-  "Майстер-сержант",
-  "Старший майстер-сержант",
-  "Головний майстер-сержант",
-  "Молодший лейтенант",
-  "Лейтенант",
-  "Старший лейтенант",
-  "Капітан",
-  "Майор",
-  "Підполковник",
-  "Полковник",
-  "Бригадний генерал",
-  "Генерал-майор",
-  "Генерал-лейтенант",
-  "Генерал",
+  "Private",
+  "Senior Private",
+  "Junior Sergeant",
+  "Sergeant",
+  "Senior Sergeant",
+  "Chief Sergeant",
+  "Staff Sergeant",
+  "Master Sergeant",
+  "Senior Master Sergeant",
+  "Chief Master Sergeant",
+  "Junior Lieutenant",
+  "Lieutenant",
+  "Senior Lieutenant",
+  "Captain",
+  "Major",
+  "Lieutenant Colonel",
+  "Colonel",
+  "Brigadier General",
+  "Major General",
+  "Lieutenant General",
+  "General",
 ] as const;
 
 // ── Security clearance levels ───────────────────────
 export const CLEARANCE_LEVELS = [
-  "Без допуску",
-  "Для службового користування",
-  "Таємно",
-  "Цілком таємно",
-  "Особливої важливості",
+  "No clearance",
+  "For official use only",
+  "Secret",
+  "Top secret",
+  "Special importance",
 ] as const;
 
 // ── User roles ──────────────────────────────────────
@@ -79,20 +79,20 @@ export interface User {
 export type SafeUser = Omit<User, "password">;
 
 export const insertUserSchema = z.object({
-  username: z.string().min(3, "Логін має бути не менше 3 символів"),
-  password: z.string().min(6, "Пароль має бути не менше 6 символів"),
-  fullName: z.string().min(1, "ПІБ обов'язкове"),
-  rank: z.string().min(1, "Звання обов'язкове"),
-  unit: z.string().min(1, "Підрозділ обов'язковий"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().min(1, "Full name is required"),
+  rank: z.string().min(1, "Rank is required"),
+  unit: z.string().min(1, "Unit is required"),
   callsign: z.string().optional(),
-  clearanceLevel: z.enum(CLEARANCE_LEVELS).default("Без допуску"),
+  clearanceLevel: z.enum(CLEARANCE_LEVELS).default("No clearance"),
   role: z.enum(USER_ROLES).default("user"),
   isActive: z.boolean().default(true),
 });
 
 export const loginSchema = z.object({
-  username: z.string().min(1, "Введіть логін"),
-  password: z.string().min(1, "Введіть пароль"),
+  username: z.string().min(1, "Enter username"),
+  password: z.string().min(1, "Enter password"),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
