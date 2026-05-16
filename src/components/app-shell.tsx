@@ -25,11 +25,15 @@ export default function AppShell() {
   }, [dark]);
 
   const navItems = [
-    { page: "dashboard" as Page, label: "Дашборд", icon: LayoutDashboard },
-    { page: "products" as Page, label: "Продукти", icon: Package },
+    { page: "dashboard" as Page, label: "Dashboard", icon: LayoutDashboard },
+    { page: "products" as Page, label: "Products", icon: Package },
+
+    // Example of role-based navigation: only show "Users" page to admins
     ...(user?.role === "admin"
-      ? [{ page: "users" as Page, label: "Користувачі", icon: Users }]
+      ? [{ page: "users" as Page, label: "Users", icon: Users }]
       : []),
+
+      
   ];
 
   const renderPage = () => {
@@ -121,7 +125,7 @@ export default function AppShell() {
               data-testid="button-theme-toggle"
             >
               {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-              {dark ? "Світла тема" : "Темна тема"}
+              {dark ? "Light theme" : "Dark theme"}
             </Button>
             <Button
               variant="ghost"
@@ -131,7 +135,7 @@ export default function AppShell() {
               data-testid="button-logout"
             >
               <LogOut className="h-3.5 w-3.5" />
-              Вийти
+              Logout
             </Button>
           </div>
         </div>

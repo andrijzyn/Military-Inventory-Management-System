@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -44,7 +44,7 @@ function UserForm({
     resolver: zodResolver(insertUserSchema) as any,
     defaultValues: {
       username: "", password: "", fullName: "", rank: "", unit: "",
-      callsign: "", clearanceLevel: "Без допуску", role: "user", isActive: true,
+      callsign: "", clearanceLevel: "No clearance", role: "user", isActive: true,
       ...defaultValues,
     },
   });
@@ -55,16 +55,16 @@ function UserForm({
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="username" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Логін</FormLabel>
+              <FormLabel className="text-xs">Username</FormLabel>
               <FormControl><Input placeholder="login" data-testid="input-user-username" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="password" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{isEdit ? "Новий пароль (опціонально)" : "Пароль"}</FormLabel>
+              <FormLabel className="text-xs">{isEdit ? "New password (optional)" : "Password"}</FormLabel>
               <FormControl>
-                <Input type="password" placeholder={isEdit ? "Залиште порожнім" : "Пароль"} data-testid="input-user-password" {...field} />
+                <Input type="password" placeholder={isEdit ? "Leave empty to keep current" : "Password"} data-testid="input-user-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -73,8 +73,8 @@ function UserForm({
 
         <FormField control={form.control} name="fullName" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">ПІБ</FormLabel>
-            <FormControl><Input placeholder="Прізвище Ім'я По-батькові" data-testid="input-user-fullname" {...field} /></FormControl>
+            <FormLabel className="text-xs">Full name</FormLabel>
+            <FormControl><Input placeholder="Last First Middle" data-testid="input-user-fullname" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
@@ -82,10 +82,10 @@ function UserForm({
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="rank" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Звання</FormLabel>
+              <FormLabel className="text-xs">Rank</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger data-testid="select-user-rank"><SelectValue placeholder="Оберіть звання" /></SelectTrigger>
+                  <SelectTrigger data-testid="select-user-rank"><SelectValue placeholder="Select rank" /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {MILITARY_RANKS.map((rank) => (<SelectItem key={rank} value={rank}>{rank}</SelectItem>))}
@@ -96,8 +96,8 @@ function UserForm({
           )} />
           <FormField control={form.control} name="unit" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Підрозділ</FormLabel>
-              <FormControl><Input placeholder="Назва підрозділу" data-testid="input-user-unit" {...field} /></FormControl>
+              <FormLabel className="text-xs">Unit</FormLabel>
+              <FormControl><Input placeholder="Unit name" data-testid="input-user-unit" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
@@ -106,17 +106,17 @@ function UserForm({
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="callsign" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Позивний</FormLabel>
-              <FormControl><Input placeholder="Опціонально" data-testid="input-user-callsign" {...field} value={field.value ?? ""} /></FormControl>
+              <FormLabel className="text-xs">Callsign</FormLabel>
+              <FormControl><Input placeholder="Optional" data-testid="input-user-callsign" {...field} value={field.value ?? ""} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
           <FormField control={form.control} name="clearanceLevel" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Рівень допуску</FormLabel>
+              <FormLabel className="text-xs">Clearance level</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger data-testid="select-user-clearance"><SelectValue placeholder="Оберіть допуск" /></SelectTrigger>
+                  <SelectTrigger data-testid="select-user-clearance"><SelectValue placeholder="Select clearance" /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {CLEARANCE_LEVELS.map((level) => (<SelectItem key={level} value={level}>{level}</SelectItem>))}
@@ -130,14 +130,14 @@ function UserForm({
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="role" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Роль у системі</FormLabel>
+              <FormLabel className="text-xs">Role</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger data-testid="select-user-role"><SelectValue /></SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="admin">Адміністратор</SelectItem>
-                  <SelectItem value="user">Користувач</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -145,7 +145,7 @@ function UserForm({
           )} />
           <FormField control={form.control} name="isActive" render={({ field }) => (
             <FormItem className="flex items-end gap-3 pb-2">
-              <FormLabel className="text-xs mb-0.5">Активний</FormLabel>
+              <FormLabel className="text-xs mb-0.5">Active</FormLabel>
               <FormControl>
                 <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-user-active" />
               </FormControl>
@@ -155,9 +155,9 @@ function UserForm({
 
         <Button type="submit" className="w-full" disabled={isPending} data-testid="button-save-user">
           {isPending ? (
-            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isEdit ? "Збереження..." : "Створення..."}</>
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isEdit ? "Saving..." : "Creating..."}</>
           ) : (
-            isEdit ? "Зберегти зміни" : "Створити користувача"
+            isEdit ? "Save changes" : "Create user"
           )}
         </Button>
       </form>
@@ -179,8 +179,8 @@ export default function UsersPage() {
       const res = await apiRequest("POST", "/api/users", data);
       return await res.json();
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setDialogOpen(false); toast({ title: "Користувача створено" }); },
-    onError: (error: Error) => { toast({ variant: "destructive", title: "Помилка", description: error.message }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setDialogOpen(false); toast({ title: "User created" }); },
+    onError: (error: Error) => { toast({ variant: "destructive", title: "Error", description: error.message }); },
   });
 
   const updateMutation = useMutation({
@@ -190,14 +190,14 @@ export default function UsersPage() {
       const res = await apiRequest("PATCH", `/api/users/${id}`, payload);
       return await res.json();
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setEditUser(null); toast({ title: "Зміни збережено" }); },
-    onError: (error: Error) => { toast({ variant: "destructive", title: "Помилка", description: error.message }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setEditUser(null); toast({ title: "Changes saved" }); },
+    onError: (error: Error) => { toast({ variant: "destructive", title: "Error", description: error.message }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/users/${id}`); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setDeleteTarget(null); toast({ title: "Користувача видалено" }); },
-    onError: (error: Error) => { toast({ variant: "destructive", title: "Помилка", description: error.message }); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/users"] }); setDeleteTarget(null); toast({ title: "User deleted" }); },
+    onError: (error: Error) => { toast({ variant: "destructive", title: "Error", description: error.message }); },
   });
 
   const activeCount = users.filter((u) => u.isActive).length;
@@ -207,12 +207,12 @@ export default function UsersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Користувачі</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Управління акаунтами та допусками</p>
+          <h1 className="text-xl font-semibold tracking-tight" data-testid="text-page-title">Users</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage accounts and clearances</p>
         </div>
         <Button onClick={() => setDialogOpen(true)} size="sm" data-testid="button-add-user">
           <UserPlus className="h-4 w-4 mr-1.5" />
-          Додати
+          Add
         </Button>
       </div>
 
@@ -220,19 +220,19 @@ export default function UsersPage() {
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Users className="h-5 w-5 text-muted-foreground" />
-            <div><p className="text-xs text-muted-foreground">Всього</p><p className="text-lg font-semibold" data-testid="text-total-users">{users.length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Total</p><p className="text-lg font-semibold" data-testid="text-total-users">{users.length}</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-green-500" />
-            <div><p className="text-xs text-muted-foreground">Активних</p><p className="text-lg font-semibold" data-testid="text-active-users">{activeCount}</p></div>
+            <div><p className="text-xs text-muted-foreground">Active</p><p className="text-lg font-semibold" data-testid="text-active-users">{activeCount}</p></div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldAlert className="h-5 w-5 text-primary" />
-            <div><p className="text-xs text-muted-foreground">Адмінів</p><p className="text-lg font-semibold" data-testid="text-admin-count">{adminCount}</p></div>
+            <div><p className="text-xs text-muted-foreground">Admins</p><p className="text-lg font-semibold" data-testid="text-admin-count">{adminCount}</p></div>
           </CardContent>
         </Card>
       </div>
@@ -245,13 +245,13 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[180px]">ПІБ</TableHead>
-                  <TableHead>Звання</TableHead>
-                  <TableHead>Підрозділ</TableHead>
-                  <TableHead>Позивний</TableHead>
-                  <TableHead>Допуск</TableHead>
-                  <TableHead>Роль</TableHead>
-                  <TableHead className="text-center">Статус</TableHead>
+                  <TableHead className="w-[180px]">Full name</TableHead>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Callsign</TableHead>
+                  <TableHead>Clearance</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -265,7 +265,7 @@ export default function UsersPage() {
                     <TableCell className="text-sm">{u.unit}</TableCell>
                     <TableCell className="text-sm">{u.callsign || "—"}</TableCell>
                     <TableCell><Badge variant={clearanceBadgeVariant(u.clearanceLevel)} className="text-xs whitespace-nowrap">{u.clearanceLevel}</Badge></TableCell>
-                    <TableCell><Badge variant={u.role === "admin" ? "default" : "secondary"} className="text-xs">{u.role === "admin" ? "Адмін" : "Користувач"}</Badge></TableCell>
+                    <TableCell><Badge variant={u.role === "admin" ? "default" : "secondary"} className="text-xs">{u.role === "admin" ? "Admin" : "User"}</Badge></TableCell>
                     <TableCell className="text-center"><span className={`inline-block w-2 h-2 rounded-full ${u.isActive ? "bg-green-500" : "bg-red-400"}`} /></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -284,13 +284,13 @@ export default function UsersPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[480px]"><DialogHeader><DialogTitle>Новий користувач</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-[480px]"><DialogHeader><DialogTitle>New user</DialogTitle><DialogDescription>Create a new user account</DialogDescription></DialogHeader>
           <UserForm onSubmit={(data) => createMutation.mutate(data)} isPending={createMutation.isPending} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-        <DialogContent className="max-w-[480px]"><DialogHeader><DialogTitle>Редагувати: {editUser?.fullName}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-[480px]"><DialogHeader><DialogTitle>Edit: {editUser?.fullName}</DialogTitle></DialogHeader>
           {editUser && (
             <UserForm isEdit defaultValues={{
               username: editUser.username, password: "", fullName: editUser.fullName,
@@ -305,14 +305,14 @@ export default function UsersPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Видалити користувача?</AlertDialogTitle>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
             <AlertDialogDescription>
-              Ви впевнені, що хочете видалити <strong>{deleteTarget?.fullName}</strong> (@{deleteTarget?.username})? Цю дію не можна скасувати.
+              Are you sure you want to delete <strong>{deleteTarget?.fullName}</strong> (@{deleteTarget?.username})? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)} data-testid="button-confirm-delete">Видалити</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)} data-testid="button-confirm-delete">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
