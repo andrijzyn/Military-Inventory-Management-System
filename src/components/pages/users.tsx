@@ -44,7 +44,7 @@ function UserForm({
     resolver: zodResolver(insertUserSchema) as any,
     defaultValues: {
       username: "", password: "", fullName: "", rank: "", unit: "",
-      callsign: "", clearanceLevel: "Без допуску", role: "user", isActive: true,
+      callsign: "", clearanceLevel: "No clearance", role: "user", isActive: true,
       ...defaultValues,
     },
   });
