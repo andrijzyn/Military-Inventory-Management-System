@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { LayoutDashboard, Package, Users, Sun, Moon, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Package, Users, Sun, Moon, LogOut, Shield , FolderTree} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Dashboard from "@/components/pages/dashboard";
 import Products from "@/components/pages/products";
 import UsersPage from "@/components/pages/users";
+import Locations from "@/components/pages/locations";
 
-type Page = "dashboard" | "products" | "users";
+type Page = "dashboard" | "products" | "users" | "locations";
 
 export default function AppShell() {
   const { user, logout } = useAuth();
@@ -28,12 +29,14 @@ export default function AppShell() {
     { page: "dashboard" as Page, label: "Dashboard", icon: LayoutDashboard },
     { page: "products" as Page, label: "Products", icon: Package },
 
+    ...(user?.role === "admin"
+        ? [{ page: "locations" as Page, label: "Locations", icon: FolderTree }]
+        : []),
+
     // Example of role-based navigation: only show "Users" page to admins
     ...(user?.role === "admin"
       ? [{ page: "users" as Page, label: "Users", icon: Users }]
-      : []),
-
-      
+      : [])
   ];
 
   const renderPage = () => {
@@ -42,6 +45,8 @@ export default function AppShell() {
         return <Dashboard onNavigate={setCurrentPage} />;
       case "products":
         return <Products />;
+      case "locations":
+        return <Locations />;
       case "users":
         return user?.role === "admin" ? <UsersPage /> : <Dashboard onNavigate={setCurrentPage} />;
       default:
