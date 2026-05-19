@@ -11,17 +11,19 @@ import {
   conflict,
 } from "@/lib/apiError";
 
-export const GET = withErrorHandling(async (
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = withErrorHandling(async (req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return unauthorized();
 
-  const { id } = await params;
-  const product = await storage.getProduct(id);
-  if (!product) return notFound("Product not found");
-  return NextResponse.json(product);
+  const url = new URL(req.url);
+  const q = url.searchParams.get("q") ?? "";
+
+  const all = await storage.getLocations();
+  const filtered = q
+      ? all.filter((l) => l.label.toLowerCase().includes(q.toLowerCase()))
+      : all;
+
+  return NextResponse.json(filtered.slice(0, 20));
 });
 
 export const PATCH = withErrorHandling(async (
